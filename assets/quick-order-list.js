@@ -335,4 +335,68 @@ if (!customElements.get('quick-order-list')) {
         if (input) {
           input.value = input.getAttribute('value');
         }
-        this.isEnterPressed = false
+        this.isEnterPressed = false;
+      }
+
+      getSectionsUrl() {
+        if (window.pageNumber) {
+          return `${window.location.pathname}?page=${window.pageNumber}`;
+        } else {
+          return `${window.location.pathname}`;
+        }
+      }
+
+      getSectionInnerHTML(html, selector) {
+        return new DOMParser().parseFromString(html, 'text/html').querySelector(selector).innerHTML;
+      }
+    }
+  );
+}
+
+// Helper functions that need to be available globally
+function fetchConfig(type = 'json') {
+  return {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': `application/${type}` }
+  };
+}
+
+function debounce(func, wait, immediate) {
+  var timeout;
+  return function() {
+    var context = this, args = arguments;
+    var later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) func.apply(context, args);
+  };
+}
+
+// PubSub system for cart updates
+const PUB_SUB_EVENTS = {
+  cartUpdate: 'cart-update',
+};
+
+const subscribers = {};
+
+function subscribe(eventName, callback) {
+  if (subscribers[eventName] === undefined) {
+    subscribers[eventName] = [];
+  }
+  subscribers[eventName].push(callback);
+  return function unsubscribe() {
+    subscribers[eventName] = subscribers[eventName].filter(cb => cb !== callback);
+  };
+}
+
+function publish(eventName, data) {
+  if (subscribers[eventName]) {
+    subscribers[eventName].forEach(callback => {
+      callback(data);
+    });
+  }
+}
